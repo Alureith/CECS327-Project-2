@@ -52,3 +52,42 @@ Then visit http://localhost:5000/ to verify that this worked. Expected output:
 ```
 
 ### **Step 3: Developing a basic P2P node**
+
+Navigate to the p2p-sytem file. Ensure the enviroment is set up by running the command:
+
+```
+    docker run -d -p 5000:5000 --name node1 p2p-node
+```
+
+Then create the nodes that will be passing messages using te following commands. Note: if the node1 from Step 2 is not removed there may be a naming conflict:
+
+```
+    docker run -d --name node1 -p 5001:5000 p2p-node
+    docker run -d --name node2 -p 5002:5000 p2p-node
+```
+
+If using a Linux enviroment, to send messages between nodes use the following command:
+
+```
+    curl -X POST http://localhost:5002/message -H "Content-Type: application/json" -d '{"sender": "Node1", "msg": "Hello Node2!"}'
+```
+
+Else if using Powershell, some modifications need made to the last command for it to properly parse. Use the following command:
+
+```
+    curl.exe --% -X POST http://localhost:5002/message -H "Content-Type: application/json" -d "{\"sender\":\"Node1\", \"msg\":\"Hello Node2!\"}"
+```
+
+The terminal should return this expected output:
+
+```
+    {"status": "received"}
+```
+
+And you can check the logs of node 2 to confirm the message with the following command:
+
+```
+    docker logs node2
+```
+
+#### **Step 4: 

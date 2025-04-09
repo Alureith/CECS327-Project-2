@@ -13,5 +13,9 @@ RUN pip install flask
 # Expose the Flask port
 EXPOSE 5000
 
+# Ensure Python doesn't buffer output (so logs show up immediately)
+ENV PYTHONUNBUFFERED=1
+
 # Run the app
 CMD ["python", "node.py"]
+

@@ -26,29 +26,41 @@ def ping():
 # Peer Registration
 @app.route('/register', methods=['POST'])
 def register_peer():
+    # Parse incomin JSON data from request
     data = request.get_json()
+    # Get Address Field
     peer_address = data.get('address')
 
+    # If no address is provided then return a bad request
     if not peer_address:
         return jsonify({"error": "Missing peer address"}), 400
     
+    # Add peer to the list if not registered
     if peer_address not in peers:
         peers.append(peer_address)
         print(f"Registered new peer: {peer_address}")
         return jsonify({"message": "Peer registered", "peers": peers}), 201
     else:
+    # If peer is registered then return confirmation 
         return jsonify({"message": "Peer already registered", "peers": peers}), 200
-    
+
+ # Message recieved endpoint    
 @app.route('/message', methods=['POST'])
 def receive_message():
+    # Parse the incoming JSON data
     data = request.get_json()
+
+    # Extract 'sender' and 'msg' fields
     sender = data.get("sender")
     msg = data.get("msg")
 
+    # Validate that both fields are present
     if not sender or not msg:
         return jsonify({"error": "Missing sender or msg"}), 400
 
+    # Log the received message to the console
     print(f"📨 Received message from {sender}: {msg}")
+    # Respond to the sender with confirmation
     return jsonify({"status": "received"}), 200
 
 # Run the app on host 0.0.0.0 (accessible externally) and port 5000
