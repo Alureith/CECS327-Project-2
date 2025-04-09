@@ -59,7 +59,7 @@ def receive_message():
         return jsonify({"error": "Missing sender or msg"}), 400
 
     # Log the received message to the console
-    print(f"📨 Received message from {sender}: {msg}")
+    print(f"Received message from {sender}: {msg}")
     # Respond to the sender with confirmation
     return jsonify({"status": "received"}), 200
 
