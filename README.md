@@ -90,4 +90,66 @@ And you can check the logs of node 2 to confirm the message with the following c
     docker logs node2
 ```
 
-#### **Step 4: 
+#### **Step 4: Bootstrap Node Setup**
+
+Create and run the bootstrap node (central peer registry):
+
+```bash
+docker build -t bootstrap-node -f Dockerfile.bootstrap .
+docker run -d --name bootstrap -p 5000:5000 bootstrap-node
+```
+
+Test peer registration using:
+
+```bash
+curl http://localhost:5000/peers
+```
+
+Expected output:
+
+```json
+{"peers": []}
+```
+
+---
+
+#### **Step 5: Peer Nodes with Auto Discovery**
+
+Now launch the P2P nodes. Each node will:
+- Register with the bootstrap node.
+- Fetch peer list from the bootstrap node.
+- Periodically update its peer list by contacting other known peers.
+- Respond to messages.
+- Automatically respond to handshake messages when a new peer is discovered.
+
+Example:
+
+```bash
+docker run -d --name node1 -p 5001:5000 p2p-node
+curl http://localhost:5000/peers
+```
+
+Repeat for additional nodes:
+
+```bash
+docker run -d --name node2 -p 5002:5000 p2p-node
+```
+
+### **Step 6: Docker Compose for Multiple Nodes**
+
+A `docker-compose.yml` file is included to spin up a dozen nodes.
+
+Build and launch:
+
+```bash
+docker compose build --no-cache
+docker compose up
+```
+
+---
+
+## Additional Notes
+- Logs are printed directly to the Docker console output.
+- Use `docker logs <container>` to inspect logs of individual nodes.
+- Use `docker ps` and `docker network inspect` to verify connections.
+- The network is designed to self-heal and discover peers even if the bootstrap node is removed.
