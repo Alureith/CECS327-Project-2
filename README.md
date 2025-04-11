@@ -56,7 +56,7 @@ Then visit http://localhost:5000/ to verify that this worked. Expected output:
 Navigate to the p2p-sytem file. Ensure the enviroment is set up by running the command:
 
 ```
-    docker run -d -p 5000:5000 --name node1 p2p-node
+    docker build -t p2p-node .
 ```
 
 Then create the nodes that will be passing messages using te following commands. Note: if the node1 from Step 2 is not removed there may be a naming conflict:
