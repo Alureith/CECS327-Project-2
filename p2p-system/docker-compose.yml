@@ -1,0 +1,92 @@
+services:
+  bootstrap:
+    image: bootstrap-node
+    container_name: bootstrap
+    ports:
+      - "5000:5000"
+    networks:
+      - p2pnet
+
+  node1:
+    image: p2p-node
+    container_name: node1
+    ports:
+      - "5001:5000"
+    networks:
+      - p2pnet
+
+  node2:
+    image: p2p-node
+    container_name: node2
+    ports:
+      - "5002:5000"
+    networks:
+      - p2pnet
+
+  node3:
+    image: p2p-node
+    container_name: node3
+    ports:
+      - "5003:5000"
+    networks:
+      - p2pnet
+
+  node4:
+    image: p2p-node
+    container_name: node4
+    ports:
+      - "5004:5000"
+    networks:
+      - p2pnet
+
+  node5:
+    image: p2p-node
+    container_name: node5
+    ports:
+      - "5005:5000"
+    networks:
+      - p2pnet
+
+  node6:
+    image: p2p-node
+    container_name: node6
+    ports:
+      - "5006:5000"
+    networks:
+      - p2pnet
+
+  node7:
+    image: p2p-node
+    container_name: node7
+    ports:
+      - "5007:5000"
+    networks:
+      - p2pnet
+
+  node8:
+    image: p2p-node
+    container_name: node8
+    ports:
+      - "5008:5000"
+    networks:
+      - p2pnet
+
+  node9:
+    image: p2p-node
+    container_name: node9
+    ports:
+      - "5009:5000"
+    networks:
+      - p2pnet
+
+  node10:
+    image: p2p-node
+    container_name: node10
+    ports:
+      - "5010:5000"
+    networks:
+      - p2pnet
+
+networks:
+  p2pnet:
+    driver: bridge

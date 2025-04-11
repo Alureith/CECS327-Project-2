@@ -1,6 +1,9 @@
-# Import required libraries
-from flask import Flask, jsonify, request  # Flask for HTTP server, jsonify for sending JSON responses
-import uuid  # UUID for generating a unique node identifier
+from flask import Flask, jsonify, request
+import uuid
+import requests
+import socket
+import threading
+import time
 
 # Create a Flask application instance
 app = Flask(__name__)
@@ -9,7 +12,32 @@ app = Flask(__name__)
 node_id = str(uuid.uuid4())
 
 # Store registered peer addresses
-peers = []
+peers = set()
+
+def get_own_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(("8.8.8.8", 80))
+        return s.getsockname()[0]
+    finally:
+        s.close()
+
+own_ip = get_own_ip()
+own_url = f"http://{own_ip}:5000"
+
+
+# Register with the bootstrap node
+def register_with_bootstrap():
+    try:
+        print(f"Registering with bootstrap: {own_url}")
+        res = requests.post("http://bootstrap:5000/register", json={"address": own_url})
+        print(f"Bootstrap response: {res.text}")
+        bootstrap_peers = requests.get("http://bootstrap:5000/peers").json().get("peers", [])
+        for peer in bootstrap_peers:
+            if peer != own_url:
+                peers.add(peer)
+    except Exception as e:
+        print(f"Failed to register or fetch peers from bootstrap: {e}")
 
 # Define the root endpoint to return the node's status
 @app.route('/')
@@ -37,7 +65,7 @@ def register_peer():
     
     # Add peer to the list if not registered
     if peer_address not in peers:
-        peers.append(peer_address)
+        peers.add(peer_address)
         print(f"Registered new peer: {peer_address}")
         return jsonify({"message": "Peer registered", "peers": peers}), 201
     else:
@@ -60,9 +88,68 @@ def receive_message():
 
     # Log the received message to the console
     print(f"Received message from {sender}: {msg}")
+
+    # If new peer, add to set
+    if msg == "New peer discovered":
+        # Send reply
+        try:
+            res = requests.post(
+                f"{sender}/message",
+                json={"sender": own_url, "msg": "Welcome new peer"}
+            )
+            print(f"Replied to {sender}, response: {res.text}")
+        except Exception as e:
+            print(f"Failed to reply to {sender}: {e}")
+
     # Respond to the sender with confirmation
     return jsonify({"status": "received"}), 200
 
+# Fetch peers from existing peers using /peers/{ip}
+def fetch_peers_from_peers():
+    global peers
+    current_peers = list(peers)
+    for peer in current_peers:
+        try:
+            res = requests.get(f"{peer}/peers")
+            new_peers = res.json().get("peers", [])
+            for p in new_peers:
+                if p != own_url and p not in peers:
+                    peers.add(p)
+                    print(f"Discovered new peer from {peer}: {p}")
+        except Exception as e:
+            print(f"Failed to fetch peers from {peer}: {e}")
+
+# Periodically update peers from other known peers
+def periodic_peer_update():
+    while True:
+        time.sleep(10)
+        fetch_peers_from_peers()
+
+@app.route('/peers', methods=['GET'])
+def get_peers():
+    sender_ip = request.remote_addr
+    sender_url = f"http://{sender_ip}:5000"
+
+    # Register sender as a peer if it's not already in the list and not itself
+    if sender_url != own_url and sender_url not in peers:
+        peers.add(sender_url)
+        print(f"Discovered peer from ping: {sender_url}")
+        
+        # Send message to newly discovered peer
+        try:
+            res = requests.post(
+                f"{sender_url}/message",
+                json={"sender": own_url, "msg": "New peer discovered"}
+            )
+            print(f"Message sent to {sender_url}, response: {res.text}")
+        except Exception as e:
+            print(f"Failed to message new peer {sender_url}: {e}")
+
+    return jsonify({"peers": list(peers | {own_url})})
+
+
 # Run the app on host 0.0.0.0 (accessible externally) and port 5000
 if __name__ == '__main__':
+    register_with_bootstrap()
+    threading.Thread(target=periodic_peer_update, daemon=True).start()
     app.run(host='0.0.0.0', port=5000)
